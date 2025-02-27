@@ -1,34 +1,43 @@
 version: '3.3'
 services:
-  master:
-    image: crawlabteam/crawlab
-    container_name: crawlab_master
-    restart: always
+  master: 
+    image: crawlabteam/crawlab:latest
+    container_name: crawlab_example_master
     environment:
-      CRAWLAB_NODE_MASTER: "Y" # Y: master node
-      CRAWLAB_MONGO_HOST: "mongo" # mongo host address. In the docker compose network, directly refer to the service name
-      CRAWLAB_MONGO_PORT: "27017" # mongo port 
-      CRAWLAB_MONGO_DB: "crawlab" # mongo database 
-      CRAWLAB_MONGO_USERNAME: "username" # mongo username
-      CRAWLAB_MONGO_PASSWORD: "password" # mongo password 
-      CRAWLAB_MONGO_AUTHSOURCE: "admin" # mongo auth source 
+      CRAWLAB_NODE_MASTER: "Y"
+      CRAWLAB_MONGO_HOST: "mongo"
     volumes:
-      - "/opt/.crawlab/master:/root/.crawlab" # persistent crawlab metadata
-      - "/opt/crawlab/master:/data" # persistent crawlab data
-      - "/var/crawlab/log:/var/log/crawlab" # log persistent 
-    ports:
-      - "8080:8080" # exposed api port
+      - "./.crawlab/master:/root/.crawlab"
+    ports:    
+      - "8080:8080"
     depends_on:
       - mongo
 
+  worker01: 
+    image: crawlabteam/crawlab:latest
+    container_name: crawlab_example_worker01
+    environment:
+      CRAWLAB_NODE_MASTER: "N"
+      CRAWLAB_GRPC_ADDRESS: "master"
+      CRAWLAB_FS_FILER_URL: "http://master:8080/api/filer"
+    volumes:
+      - "./.crawlab/worker01:/root/.crawlab"
+    depends_on:
+      - master
+
+  worker02: 
+    image: crawlabteam/crawlab:latest
+    container_name: crawlab_example_worker02
+    environment:
+      CRAWLAB_NODE_MASTER: "N"
+      CRAWLAB_GRPC_ADDRESS: "master"
+      CRAWLAB_FS_FILER_URL: "http://master:8080/api/filer"
+    volumes:
+      - "./.crawlab/worker02:/root/.crawlab"
+    depends_on:
+      - master
+
   mongo:
     image: mongo:4.2
+    container_name: crawlab_example_mongo
     restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: "username" # mongo username
-      MONGO_INITDB_ROOT_PASSWORD: "password" # mongo password
-    volumes:
-      - "/opt/.crawlab/master:/root/.crawlab" # persistent crawlab metadata
-      - "/opt/crawlab/mongo/data/db:/data/db" # persistent mongo data
-    ports:
-      - "27017:27017" # expose mongo port to host machine
